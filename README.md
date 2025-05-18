@@ -130,7 +130,6 @@ streamlit run app.py
 
 ## 🖼️ Screenshots (UI Preview)
 
-> 📌 _Add screenshots of your Streamlit UI here for visual reference_
 
 <img width="823" alt="image" src="https://github.com/user-attachments/assets/dfaa58ec-29eb-4bc7-abe8-0e10b3b7a917" />
 
