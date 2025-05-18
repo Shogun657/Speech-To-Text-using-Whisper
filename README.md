@@ -1,6 +1,6 @@
-# 🎙️ Whisper Transcriber on macOS (Python 3.11)
+# 🎙️ Whisper Transcriber on macOS (Python 3.11 + Streamlit UI)
 
-This project is a command-line tool that uses [OpenAI's Whisper](https://github.com/openai/whisper) to transcribe audio and video files into text. It includes setup instructions, usage examples, and fixes for common macOS-related errors.
+This project is a command-line tool and web-based interface (via Streamlit) that uses [OpenAI's Whisper](https://github.com/openai/whisper) to transcribe audio and video files into text.
 
 ---
 
@@ -9,7 +9,8 @@ This project is a command-line tool that uses [OpenAI's Whisper](https://github.
 - ✅ Transcribes `.mp4`, `.mov`, `.mkv`, `.avi`, `.mp3`, `.wav`, etc.
 - ✅ Supports all Whisper model sizes (`tiny`, `base`, `small`, `medium`, `large`)
 - ✅ Compatible with macOS (Apple Silicon or Intel)
-- ✅ Optionally uses `mps` (Apple GPU), but `cpu` is recommended for stability
+- ✅ CLI and Web UI via Streamlit
+- ✅ Optional use of `mps` (Apple GPU) for acceleration (use `cpu` if issues)
 
 ---
 
@@ -43,7 +44,7 @@ source whisper-env/bin/activate
 ```bash
 pip install --upgrade pip
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-pip install openai-whisper
+pip install openai-whisper streamlit
 ```
 
 ### 4. Install FFmpeg
@@ -55,8 +56,6 @@ brew install ffmpeg
 ---
 
 ## 📄 `transcribe.py` Script
-
-Save the following to `transcribe.py`:
 
 ```python
 #!/usr/bin/env python3
@@ -83,33 +82,62 @@ def transcribe_file(file_path, model_size="base", device="cpu"):
         audio_path = file_path
 
     result = model.transcribe(audio_path)
-    print("\n📝 Transcription:\n")
-    print(result["text"])
-
     if audio_path != file_path:
         os.remove(audio_path)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("file", help="Path to video or audio file")
-    parser.add_argument("--model", default="base", help="Model size (tiny, base, small, medium, large)")
-    parser.add_argument("--device", default="cpu", help="Device to run on (cpu, mps, cuda)")
-    args = parser.parse_args()
-
-    transcribe_file(args.file, model_size=args.model, device=args.device)
-```
-
-Make it executable:
-
-```bash
-chmod +x transcribe.py
+    return result["text"]
 ```
 
 ---
 
-## ▶️ Running the Script
+## 💻 Streamlit Web Interface
 
-Run with:
+### `app.py`
+
+```python
+import streamlit as st
+import whisper
+import tempfile
+import os
+from transcribe import transcribe_file
+
+st.title("🎙️ Whisper Speech-to-Text Transcriber")
+
+uploaded_file = st.file_uploader("Upload an audio or video file", type=["mp3", "mp4", "wav", "mkv", "mov", "avi"])
+model_size = st.selectbox("Choose Whisper model size", ["tiny", "base", "small", "medium", "large"], index=1)
+device = st.selectbox("Choose device", ["cpu", "mps", "cuda"], index=0)
+
+if uploaded_file is not None:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[-1]) as temp_file:
+        temp_file.write(uploaded_file.read())
+        temp_file_path = temp_file.name
+
+    if st.button("Transcribe"):
+        with st.spinner("Transcribing..."):
+            result = transcribe_file(temp_file_path, model_size=model_size, device=device)
+            st.success("Transcription complete!")
+            st.text_area("📝 Transcribed Text", value=result, height=300)
+            os.remove(temp_file_path)
+```
+
+### Run the app
+
+```bash
+streamlit run app.py
+```
+
+---
+
+## 🖼️ Screenshots (UI Preview)
+
+> 📌 _Add screenshots of your Streamlit UI here for visual reference_
+
+- ![Screenshot 1](screenshots/ui1.png)
+- ![Screenshot 2](screenshots/ui2.png)
+
+---
+
+## ▶️ CLI Usage
 
 ```bash
 ./transcribe.py testvideo.mp4 --model small --device cpu
@@ -127,59 +155,41 @@ You can also redirect output to a file:
 
 ### ❌ Running `.py` as Shell Script
 
-**Error:**
 ```bash
 ./transcribe.py: line 1: import: command not found
 ```
 
-**Fix:** Ensure the first line is:
-```python
-#!/usr/bin/env python3
-```
-Or run it with Python:
-
-```bash
-python transcribe.py ...
-```
+➡️ **Fix:** Ensure first line is `#!/usr/bin/env python3` or run with `python transcribe.py`.
 
 ---
 
 ### ❌ MPS Backend Sparse Tensor Error
 
-**Error:**
-```
-NotImplementedError: Could not run 'aten::_sparse_coo_tensor_with_dims_and_tensors' with arguments from the 'SparseMPS' backend
-```
-
-**Fix:** Use the CPU instead of MPS:
-
 ```bash
---device cpu
+NotImplementedError: Could not run 'aten::_sparse_coo_tensor_with_dims_and_tensors'
 ```
+
+➡️ **Fix:** Use `--device cpu`
 
 ---
 
 ### ❌ No module named 'whisper'
 
-**Fix:**
+➡️ **Fix:**
 
 ```bash
 pip install openai-whisper
 ```
 
-Make sure you're inside your virtual environment.
-
 ---
 
 ### ❌ FFmpeg Not Found
-
-**Error:**
 
 ```bash
 FileNotFoundError: [Errno 2] No such file or directory: 'ffmpeg'
 ```
 
-**Fix:**
+➡️ **Fix:**
 
 ```bash
 brew install ffmpeg
@@ -218,12 +228,11 @@ git push -u origin main
 
 - [Whisper GitHub](https://github.com/openai/whisper)
 - [OpenAI Whisper Docs](https://platform.openai.com/docs/guides/speech-to-text)
+- [Streamlit](https://streamlit.io)
 - [PyTorch MPS Info](https://pytorch.org/docs/stable/notes/mps.html)
-- [Youtube](https://www.youtube.com/watch?v=iQqCAQ8hG_Y)
 
 ---
 
 ## 🙌 Credits
 
-Created using OpenAI Whisper and PyTorch on macOS.
-
+Created using OpenAI Whisper and Streamlit on macOS.
