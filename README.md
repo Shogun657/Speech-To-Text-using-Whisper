@@ -132,8 +132,10 @@ streamlit run app.py
 
 > 📌 _Add screenshots of your Streamlit UI here for visual reference_
 
-- ![Screenshot 1](screenshots/ui1.png)
-- ![Screenshot 2](screenshots/ui2.png)
+<img width="823" alt="image" src="https://github.com/user-attachments/assets/dfaa58ec-29eb-4bc7-abe8-0e10b3b7a917" />
+
+<img width="785" alt="image" src="https://github.com/user-attachments/assets/9a6fe017-9a69-4f86-9efd-1e163740403e" />
+
 
 ---
 
